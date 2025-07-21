@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -17,7 +18,7 @@ func (app *application) authMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		fmt.Println("Auth Header:", authHeader)
+
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 		if tokenString == authHeader {
 			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Bearer token is required"})
@@ -40,9 +41,15 @@ func (app *application) authMiddleware() gin.HandlerFunc {
 		}
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, gin.H{"Error": "Invalid token claims"})
-			c.Abort()
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"Error": "Invalid token claims"})
 			return
+		}
+
+		if exp, ok := claims["exp"].(float64); ok {
+			if time.Unix(int64(exp), 0).Before(time.Now()) {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+				return
+			}
 		}
 		userID := claims["userId"].(float64)
 
