@@ -37,7 +37,7 @@ type application struct {
 }
 
 func main() {
-	db, err := sql.Open("sqlite3", "./data.db")
+	db, err := sql.Open("sqlite3", "/tmp/data.db")
 	if err != nil {
 		log.Fatal("Failed to connect to the database: ", err)
 	}
